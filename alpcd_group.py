@@ -41,6 +41,7 @@ def nome_categoria_para_id(nome):
 
     return None
 
+#Exemplo: python alpcd_group.py top 10
 @app.command()
 def top(n: int):
     if n <= 0:
@@ -147,7 +148,7 @@ def pesquisar(termo, n, modo="princ", tipo="any"):
 
     return lista_exercicios
 
-
+#Exemplo: python alpcd_group.py search biceps 5 all
 @app.command()
 def search(termo: str, n: int, modo: str = typer.Argument("princ")):
     if n <= 0:
@@ -201,9 +202,9 @@ def inferir_tipo(exercicio):
         return "isolated"
     return "other"
 
-
-@app.command("type")
-def tipo(exercise_id: int):
+#Exemplo: python alpcd_group.py type 167
+@app.command()
+def type(exercise_id: int):
     resposta = requests.get(URL + f"exerciseinfo/{exercise_id}/", headers=HEADERS, timeout=15)
 
     if resposta.status_code == 404:
@@ -242,6 +243,7 @@ def tipo(exercise_id: int):
 
     print(inferir_tipo(resposta.json()))
 
+#Exemplo: python alpcd_group.py equipment chest
 @app.command()
 def equipment(categoria: str):
     categoria = categoria.lower().strip()
@@ -296,6 +298,7 @@ def equipment(categoria: str):
 
     print(json.dumps(resultado, ensure_ascii=False).replace("}, {", "},\n{"))
 
+#Exemplo: python alpcd_group.py workout chest,shoulders isolated 3 --csv treino.csv
 @app.command()
 def workout(termos: str, tipo: str, n: int, ficheiro: str = typer.Option(None, "--csv")):
     if n <= 0:
@@ -352,8 +355,6 @@ def workout(termos: str, tipo: str, n: int, ficheiro: str = typer.Option(None, "
                 grupos.append(f'"{grupo}": []')
         print("{ " + ",\n ".join(grupos) + "\n}")
 
-
-
 ALIASES_EQUIP = {
     "bodyweight": "none (bodyweight exercise)",
     "none": "none (bodyweight exercise)",
@@ -362,29 +363,23 @@ ALIASES_EQUIP = {
     "pull up bar": "pull-up bar",
 }
 
-
 def obter_equipamentos():
     resposta = requests.get(URL + "equipment/", headers=HEADERS, params={"limit": 100}, timeout=15)
-
     if resposta.status_code != 200:
         print("Erro:", resposta.status_code)
         raise typer.Exit()
 
     return {e["id"]: e["name"] for e in resposta.json()["results"]}
 
-
 def obter_musculos():
     resposta = requests.get(URL + "muscle/", headers=HEADERS, params={"limit": 100}, timeout=15)
-
     if resposta.status_code != 200:
         print("Erro:", resposta.status_code)
         raise typer.Exit()
 
     return [m.get("name_en") or m["name"] for m in resposta.json()["results"]]
 
-
 def equipamento_para_ids(texto, todos):
-    """Converte 'dumbbell,bench' em {id: nome}. Devolve também os nomes não reconhecidos."""
     escolhidos = {}
     ignorados = []
 
@@ -416,13 +411,12 @@ def equipamento_para_ids(texto, todos):
 
 
 def formatar_lista(exercicios):
-    """Uma lista de exercícios com um exercício por linha (igual ao workout)."""
     if not exercicios:
         return "[]"
     linhas = ",\n  ".join(json.dumps(e, ensure_ascii=False) for e in exercicios)
     return "[\n  " + linhas + " ]"
 
-
+#Exemplo: python alpcd_group.py home dumbbell,bench 5
 @app.command()
 def home(equipamento: str, n: int):
     if n <= 0:
@@ -459,7 +453,6 @@ def home(equipamento: str, n: int):
                 if exercicio["id"] in exercicios:
                     continue
 
-                # só aceita exercícios cujo equipamento esteja TODO na lista do utilizador
                 equip_exercicio = {item["name"] for item in exercicio["equipment"]}
                 if not equip_exercicio <= permitidos:
                     continue
@@ -486,7 +479,6 @@ def home(equipamento: str, n: int):
 
     lista = list(exercicios.values())
 
-    # músculos treinados (principais) por TODOS os exercícios encontrados
     cobertos = {m for ex in lista for m in ex["muscles"]}
     sem_treino = sorted(m for m in obter_musculos() if m not in cobertos)
 
@@ -497,8 +489,6 @@ def home(equipamento: str, n: int):
     print(f' "muscles_covered": {json.dumps(sorted(cobertos), ensure_ascii=False)},')
     print(f' "undertrained_muscles": {json.dumps(sem_treino, ensure_ascii=False)}')
     print("}")
-
-
 
 SPLITS = {
     2: [
@@ -525,7 +515,7 @@ SPLITS = {
     ],
 }
 
-
+#Exemplo: python alpcd_group.py week 3 compound 2
 @app.command()
 def week(dias: int, esforco: str = typer.Argument("any"), n: int = typer.Argument(2)):
     if dias not in SPLITS:
@@ -548,10 +538,7 @@ def week(dias: int, esforco: str = typer.Argument("any"), n: int = typer.Argumen
         dia = {}
 
         for termo in termos:
-            # cardio é sempre tipo "cardio", por isso não se filtra por esforço
             filtro = "any" if termo == "cardio" else esforco
-
-            # pede mais resultados para poder saltar os já usados noutros dias
             candidatos = pesquisar(termo, n * 3, "princ", filtro)
             if not candidatos:
                 dia[termo] = []
@@ -570,7 +557,6 @@ def week(dias: int, esforco: str = typer.Argument("any"), n: int = typer.Argumen
 
         plano[f"Dia {indice} - {nome_dia}"] = dia
 
-    # impressão: um exercício por linha, como no workout
     dias_txt = []
     for nome_dia, grupos in plano.items():
         grupos_txt = []
