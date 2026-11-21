@@ -354,10 +354,6 @@ def workout(termos: str, tipo: str, n: int, ficheiro: str = typer.Option(None, "
 
 
 
-# ===== EXTRA 1: home =====
-# Pergunta: "Que exercícios posso fazer só com o equipamento que tenho,
-# e que músculos ficam sem treino com esse equipamento?"
-
 ALIASES_EQUIP = {
     "bodyweight": "none (bodyweight exercise)",
     "none": "none (bodyweight exercise)",
@@ -503,9 +499,6 @@ def home(equipamento: str, n: int):
     print("}")
 
 
-# ===== EXTRA 2: week =====
-# Pergunta: "Posso treinar X dias por semana. Como fica um plano semanal
-# com músculos diferentes por dia e sem exercícios repetidos?"
 
 SPLITS = {
     2: [
